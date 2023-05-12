@@ -1,4 +1,4 @@
-# SNL-complier
+# SNL-compiler
 该项目包含用C语言编写的：
 
 * SNL语言词法分析程序
