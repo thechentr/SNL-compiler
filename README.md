@@ -1,2 +1,14 @@
 # SNL-complier
-Contains a lexical and syntactic analysis programs (c++) for SNL programming language.
+该项目包含用C语言编写的：
+
+* SNL语言词法分析程序
+* SNL语言递归下降语法分析程序
+* SNL语言LL（1）语法分析程序
+* ！！！以上三种程序的自动生成程序（基于Python）！！！
+
+具体说明可参考我的博客：[编译原理课设计SNL语言编译器（语法分析部分](http://chentr.com/2023/05/01/SNL语言编译器（语法分析部分）/)
+
+除此之外，该项目提供了测试样例和可执行程序文件，可直接运行`SNL_compiler\analyse.exe`查看程序运行效果。
+
+对于自动生成程序，可以运行`SNL语法分析代码生成器.py`重新生成C语言代码，(该操作会重新生成一个与当前一致的`SNL_compiler`,但不包含测试样例和可执行程序文件，需重新编译）
+

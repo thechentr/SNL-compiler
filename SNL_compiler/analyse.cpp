@@ -18,7 +18,7 @@ int main() {
     cout << "共计" << tokenList.size() << "个有效token" << endl;
 
     // 用哪个就把那个取消注释，把另一个注释掉
-    
+
     // 实例化LL1语法分析器
     // LL1parsinger* analyser = new LL1parsinger(tokenList);
 
@@ -31,4 +31,6 @@ int main() {
 
 
     cout << endl << "分析完成" << endl;
+    int a;
+    cin >> a;
 }
