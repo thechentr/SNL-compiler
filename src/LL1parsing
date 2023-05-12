@@ -1,0 +1,266 @@
+#include <iostream>
+#include <iomanip>
+#include <stdlib.h>
+#include <stdio.h>
+#include <fstream>
+#include <string>
+#include <vector>
+#ifndef PS_DEC
+#define PS_DEC
+#include "PasingDec.h"
+#endif
+#define OUT_FLAG 0 // 是否输出分析过程信息
+using namespace std;
+
+struct Symbol
+{
+    int kind; // 0非终极符, 1终极符, 2弹栈, -1error
+    NonTerminal n;
+    Terminal t;
+    TreeNode *father;
+};
+
+class LL1parsinger
+{
+private:
+    // toke序列：词法分析得到的token
+    vector<Token> tokenList;
+    Token *currentToken;
+    int INDEX = 0;
+    // 符号栈：待认养孩子的符号
+    vector<Symbol> symbolStack;
+    // 结点栈：栈顶为当前应插入子节点的结点
+    vector<TreeNode *> nodeStack;
+    // LL1分析矩阵
+    vector<vector<vector<Symbol> *>> LL1matrix;
+    // 语法分析树根节点
+    TreeNode *root = NULL;
+    // 初始化LL1分析表
+    void initLL1();
+    // 读取token序列的第一个token为currentToken
+    void readToken();
+    // 处理当前符号栈栈顶， 终极符/非终极符/弹栈标志
+    void popSymbolStack();
+    // 将当前 Token序列 和 符号栈 中的第一个字符进行匹配，添加子节点
+    void matchToken(Symbol t);
+    // 根据当前Token序列最前Token堆导非终极符，并创建新节点、压栈，添加子节点
+    void infer(NonTerminal n, Terminal t);
+    // 弹出结点栈栈顶
+    void popNodeStack();
+
+public:
+    // 将Token序列作为参数传递
+    LL1parsinger(vector<Token> list);
+    // 进行语法分析
+    TreeNode *analyse();
+};
+
+LL1parsinger::LL1parsinger(vector<Token> list)
+{
+    tokenList.assign(list.begin(), list.end());
+}
+
+TreeNode *LL1parsinger::analyse()
+{
+
+    initLL1();
+
+    // 创建根节点
+    root = new TreeNode("Program");
+    nodeStack.push_back(root);
+
+    Symbol s = {0, Program, BEGIN};
+    symbolStack.push_back(s);
+
+    while (!symbolStack.empty())
+    {
+        popSymbolStack();
+    }
+    // 分析成功后不应有剩余Token，且结点栈中仅剩根节点
+    readToken();
+    if (OUT_FLAG)
+        cout << "分析到 " << currentToken->line << " 行 " << getString(currentToken->wd.tok) << endl;
+    if (OUT_FLAG)
+        cout << "语法分析结束" << endl;
+    if (currentToken->wd.str == "." && INDEX == (int)tokenList.size())
+    {
+        return nodeStack[0];
+    }
+    else
+    {
+        readToken();
+        if (OUT_FLAG)
+            cout << "程序有误 " << currentToken->line << " 行 " << currentToken->wd.str << "后为多余程序" << endl;
+    }
+    exit(1);
+}
+
+void LL1parsinger::popSymbolStack()
+{
+    Symbol temp = symbolStack[symbolStack.size() - 1];
+    symbolStack.pop_back();
+    if (OUT_FLAG)
+        cout << endl
+             << "处理栈顶 ";
+    if (temp.kind == 0)
+    { // 非终极符号
+        if (OUT_FLAG)
+            cout << "非终极符 " << getString(temp.n) << endl;
+        infer(temp.n, tokenList[INDEX].wd.tok);
+    }
+    else if (temp.kind == 1)
+    { // 终极符
+        if (OUT_FLAG)
+            cout << "终极符 " << getString(temp.t) << endl;
+        matchToken(temp);
+    }
+    else if (temp.kind == 2)
+    { // 弹结点栈
+        if (OUT_FLAG)
+            cout << "弹栈标志" << endl;
+        if (OUT_FLAG)
+            cout << "弹出 " << nodeStack[nodeStack.size() - 1]->name << endl;
+        popNodeStack();
+    }
+}
+
+void LL1parsinger::readToken()
+{
+    currentToken = &tokenList[INDEX++];
+}
+
+void LL1parsinger::matchToken(Symbol t)
+{
+    // 空字符不读Token，也会导致当前栈顶的父亲不认养自己
+    if (t.t == NONE)
+    {
+        return;
+    }
+
+    readToken();
+    if (OUT_FLAG)
+        cout << "读到 " << currentToken->wd.str << " " << getString(currentToken->wd.tok) << endl;
+
+    if (currentToken->wd.tok == t.t)
+    {
+        // 匹配则创建新结点，由于是终结符，不压入符号栈
+        TreeNode *temp = new TreeNode(currentToken->wd.str);
+        temp->tk = currentToken;
+        temp->father = t.father;
+        temp->father->addChild(temp);
+        // nodeStack[nodeStack.size() - 1]->addChild(temp);
+        if (OUT_FLAG)
+            cout << t.father->name << "认养了" << temp->name << endl;
+    }
+    else
+    {
+        if (OUT_FLAG)
+            cout << currentToken->line << "行 " << currentToken->wd.str << " 处应为" << getString(t.t) << endl;
+        exit(1);
+    }
+}
+
+void LL1parsinger::infer(NonTerminal n, Terminal t)
+{
+
+    // 在符号栈中压一个弹栈标志
+    Symbol p;
+    p.kind = 2;
+    symbolStack.push_back(p);
+    // cout << "压入弹栈标志" << endl;
+
+    // 按照分析矩阵进行推导
+    vector<Symbol> vs = *LL1matrix[n][t];
+    if (OUT_FLAG)
+        cout << "推导出" << endl;
+
+    TreeNode *father = nodeStack[nodeStack.size() - 1]; // 保存当前结点栈栈顶，方便其儿子任阳
+    for (int i = 0; i != (int)vs.size(); i++)
+    {
+        if (vs[i].kind == -1)
+        { // 分析矩阵此处为错误标志
+            cout << "程序有误 : " << getString(n) << " 的Predict集无 " << getString(t) << " " << tokenList[INDEX].wd.str << endl;
+            // readToken();
+            // cout << currentToken->line << " " << currentToken->wd.str << endl;
+            // cout << "符号栈的第一个Token为 " << symbolStack[symbolStack.size() - 1].kind << endl;
+            cout << "程序有误 " << currentToken->line << " 行 " << currentToken->wd.str << "后出现错误" << endl;
+            exit(1);
+        }
+        if (vs[i].kind == 0)
+        { // 非终极符
+            if (OUT_FLAG)
+                cout << " " << getString(vs[i].n);
+            // 创建新结点，并压入结点栈
+            TreeNode *temp = new TreeNode(getString(vs[i].n));
+            temp->father = father;
+            nodeStack.push_back(temp);
+            if (OUT_FLAG)
+                cout << " 创建了" << temp->name << "结点 其父亲是" << father->name << endl;
+        }
+        if (vs[i].kind == 1)
+        { // 终极符
+            if (OUT_FLAG)
+                cout << " " << getString(vs[i].t);
+        }
+        // 不管是终极符还是非终极符都压入符号栈
+        symbolStack.push_back(vs[i]);
+        symbolStack[symbolStack.size() - 1].father = father;
+    }
+    if (OUT_FLAG)
+        cout << endl;
+}
+
+void LL1parsinger::popNodeStack()
+{
+    // 根节点不应被弹出
+    if (nodeStack.size() == 1)
+    {
+        return;
+    }
+    // 如果一个结点有孩子则让父亲认养自己
+    if (OUT_FLAG)
+        cout << nodeStack[nodeStack.size() - 1]->name << "找爸爸" << nodeStack[nodeStack.size() - 1]->father->name << endl;
+    if (nodeStack[nodeStack.size() - 1]->haveChile())
+    {
+        if (OUT_FLAG)
+            cout << nodeStack[nodeStack.size() - 1]->father->name << "认养了" << nodeStack[nodeStack.size() - 1]->name << endl;
+        nodeStack[nodeStack.size() - 1]->father->addChild(nodeStack[nodeStack.size() - 1]);
+    }
+    else
+    {
+        if (OUT_FLAG)
+            cout << nodeStack[nodeStack.size() - 1]->father->name << "不认养" << nodeStack[nodeStack.size() - 1]->name << endl;
+    }
+    nodeStack.pop_back();
+}
+
+void LL1parsinger::initLL1()
+{
+    // 重复利用的变量
+    vector<Symbol> *temp = new vector<Symbol>;
+    Symbol s;
+
+    // 填入错误标志
+    s = {-1, nullNonTerminal, nullTerminal};
+    temp->push_back(s);
+    for (int i = 0; i < 100; i++)
+    {
+        vector<vector<Symbol> *> it;
+        for (int j = 0; j < 100; j++)
+        {
+            it.push_back(temp);
+        }
+        LL1matrix.push_back(it);
+    }
+
+    // 1、按照一个产生式逆序生成vector<Symbol>
+    // 2、填入LL1matrix[产生式左部][predict]
+    // 以下为程序自动生成--------------------------------------------
+
+    ![LL1matrix]
+
+    //-------------------------------------------------------------
+
+    if (OUT_FLAG)
+        cout << "LL1分析矩阵初始化完成" << endl;
+}

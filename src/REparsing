@@ -1,0 +1,91 @@
+#include <iostream>
+#include <iomanip>
+#include <stdlib.h>
+#include <stdio.h>
+#include <fstream>
+#include <string.h>
+#include <vector>
+#ifndef PS_DEC
+#define PS_DEC
+#include "PasingDec.h"
+#endif
+using namespace std;
+
+class RDparsinger
+{
+private:
+    // token表
+    vector<Token> tokenList;
+    // 建立语法树时使用
+    Token *currentToken;
+    // currentToken = tokenList [ INDEX ]
+    int INDEX;
+    // 读取Token序列中的下一个Token，Match或输出错误时使用
+    void readToken();
+    // 对Token序列中的下一个Token进行匹配
+    TreeNode *matchToken(Terminal tok);
+    // 以下为各个产生式的子程序------------------(rdDec()生成)
+
+    ![rdDec]
+
+    // ----------------------------------------
+    void printErrorMsg(string reason);
+    // 当前待处理token属于当前非终极符predict集，报错
+    void unExcept();
+
+public:
+    RDparsinger(vector<Token> list); // 将Token序列作为参数传递
+    TreeNode *analyse();
+};
+
+RDparsinger::RDparsinger(vector<Token> list)
+{
+
+    tokenList.assign(list.begin(), list.end());
+}
+
+void RDparsinger::unExcept()
+{
+    cout << tokenList[INDEX].line << " 行 " << tokenList[INDEX].wd.str << "处有错误！" << endl;
+    exit(1);
+}
+
+TreeNode *RDparsinger::analyse()
+{
+    INDEX = 0;
+    readToken();
+    TreeNode *re = _Program();
+    cout << INDEX << endl;
+    return re;
+}
+
+void RDparsinger::readToken()
+{
+    currentToken = &tokenList[INDEX++];
+}
+
+TreeNode *RDparsinger::matchToken(Terminal tok)
+{
+
+    if (currentToken->wd.tok == tok)
+    {
+        TreeNode *t = new TreeNode(currentToken->wd.str);
+        t->tk = currentToken;
+        // cout << "match   " << currentToken->wd.str << endl;
+        readToken();
+        return t;
+    }
+    else
+    {
+        cout << currentToken->line << " 行 " << getString(currentToken->wd.tok) << " 处应为" << getString(tok) << endl;
+        exit(1);
+    }
+    exit(2);
+    return NULL;
+}
+
+//----------------------------------------------------------各非终极符的处理程序(由rdFuc()生成)
+
+![rdFuc]
+
+//-------------------------------------------------------------------------------
