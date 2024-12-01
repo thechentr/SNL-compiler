@@ -1,21 +1,23 @@
-# SNL-compiler
-该项目包含用C语言编写的：
+# SNL Compiler  
+This project includes:
 
-* SNL语言词法分析程序
-* SNL语言递归下降语法分析程序
-* SNL语言LL（1）语法分析程序
+* Lexical analysis program for the SNL language written in C
+* Recursive descent parser for the SNL language written in C
+* LL(1) parser for the SNL language written in C
 
-用Python语言编写的：
+Written in Python:
 
-* 针对任一语言产生式的Predict集求解程序
-* 针对任一语言以上三种C语言程序的自动生成程序
+* Program to compute the Predict set for any language production rule
+* Program to automatically generate the three C programs above for any language's production rules
 
-及
+Additionally:
 
-* SNL语言104条产生式的txt文档
+* A txt document containing 104 production rules for the SNL language
 
-具体说明可参考我的博客：[编译原理课设计SNL语言编译器（语法分析部分）](https://chentr.com/2023/05/03/SNL%E8%AF%AD%E8%A8%80%E7%BC%96%E8%AF%91%E5%99%A8%EF%BC%88%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E9%83%A8%E5%88%86%EF%BC%89/)
+For detailed information, please refer to my blog:  
+[中文版](https://thechentr.github.io/2023/05/13/3_SNL%E8%AF%AD%E8%A8%80%E7%BC%96%E8%AF%91%E5%99%A8%EF%BC%88%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E9%83%A8%E5%88%86%EF%BC%89/)  
+[English version](https://thechentr.github.io/2024/09/12/20_SNL/)
 
-除此之外，该项目提供了测试样例和可执行程序文件，可直接运行`SNL_compiler\analyse.exe`查看程序运行效果。
+In addition, this project provides test samples and executable program files. You can directly run `SNL_compiler\analyse.exe` to see the program's functionality.
 
-对于自动生成程序，可删除`SNL_compiler`后运行`SNL语法分析代码生成器.py`重新生成C语言代码，(该操作会重新生成一个与之前一致的`SNL_compiler`,但不包含测试样例和可执行程序文件，需重新编译）
+For the automatic generation program, you can delete `SNL_compiler` and run `SNL Syntax Analyzer Code Generator.py` to regenerate the C language code. (This will regenerate a version of `SNL_compiler` identical to the previous one, but without the test samples and executable program files. You will need to recompile it.)
